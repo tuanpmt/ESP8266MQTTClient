@@ -39,9 +39,9 @@ License (MIT license):
 #endif
 // #endif
 
-// #ifndef LOG
-// #define LOG(...)
-// #endif
+#ifndef LOG
+#define LOG(...)
+#endif
 
 #define MQTT_CHECK(cond, msg, ret)	if(cond){LOG(msg); return ret;}
 #define DEFAULT_MQTT_PORT 1883
