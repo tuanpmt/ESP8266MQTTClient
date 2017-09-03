@@ -23,7 +23,6 @@ License (MIT license):
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <ctype.h>
 
 static __inline__ int
 _is_scheme_char(int c)

@@ -6,6 +6,9 @@
 */
 
 #include "mqtt_outbox.h"
+#include <stdlib.h>
+#include <string.h>
+
 static mqtt_outbox *ob_set_data(mqtt_outbox *ob, char *data, int len, int msg_id, int msg_type, int tick, int remove_on_sent)
 {
     ob->buffer = malloc(len);
@@ -145,7 +148,7 @@ int ob_get_size(mqtt_outbox *ob)
     int sz = 0;
     while(found != NULL) {
         sz += found->len;
-        found = found->next; 
+        found = found->next;
     }
     return sz;
 }
