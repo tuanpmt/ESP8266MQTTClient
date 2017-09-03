@@ -53,7 +53,7 @@ int MQTTTransportTraits::write(WiFiClient* client, unsigned char *data, int size
 	if(_isSecure) {
 		WiFiClientSecure *client = (WiFiClientSecure*) client;
 	}
-	return client->write(data, size);
+	return client->write(reinterpret_cast<const char*>(data), size);
 }
 int MQTTTransportTraits::read(WiFiClient* client, unsigned char *data, int size)
 {
@@ -162,7 +162,7 @@ int MQTTWSTraits::write(WiFiClient* client, unsigned char *data, int size)
 	for(int i = 0; i < size; ++i) {
 		data_buffer[header_len++] = (data[i] ^ mask[i % 4]);
 	}
-	client->write(data_buffer, header_len);
+	client->write(reinterpret_cast<const char*>(data_buffer), header_len);
 	client->flush();
 	free(data_buffer);
 	return size;
