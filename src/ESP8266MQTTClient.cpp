@@ -142,7 +142,7 @@ bool MQTTClient::begin(String uri, LwtOptions lwt, int keepalive, bool clean_ses
     _transportTraits.reset(nullptr);
 
 
-    if(_scheme == "mqtt" || _scheme == "mqtts") {
+    if(_scheme == "mqtt") {
         _transportTraits = MQTTTransportTraitsPtr(new MQTTTransportTraits());
     } else if(_scheme == "mqtts") {
         _transportTraits = MQTTTransportTraitsPtr(new MQTTTransportTraits(true));
