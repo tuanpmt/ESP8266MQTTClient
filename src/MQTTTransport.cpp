@@ -41,7 +41,7 @@ std::unique_ptr<WiFiClient> MQTTTransportTraits::create()
 		return std::unique_ptr<WiFiClient>(new WiFiClientSecure());
 	return std::unique_ptr<WiFiClient>(new WiFiClient());
 }
-bool MQTTTransportTraits::connect(WiFiClient* client, const char* host, int port)
+bool MQTTTransportTraits::connect(WiFiClient* client, const char* host, int port, const char *path)
 {
 	if(_isSecure) {
 		WiFiClientSecure *client = (WiFiClientSecure*) client;
@@ -77,7 +77,7 @@ MQTTWSTraits::MQTTWSTraits(bool secure): _isSecure(secure)
 }
 
 
-bool MQTTWSTraits::connect(WiFiClient* client, const char* host, int port)
+bool MQTTWSTraits::connect(WiFiClient* client, const char* host, int port, const char *path)
 {
 	uint8_t randomKey[16] = { 0 }, timeout = 0;
 	int bite;
@@ -89,7 +89,7 @@ bool MQTTWSTraits::connect(WiFiClient* client, const char* host, int port)
 	}
 	_key = base64::encode(randomKey, 16);
 	LOG("Key: %s\r\n", _key.c_str());
-	String handshake = "GET / HTTP/1.1\r\n"
+	String handshake = "GET "+ String(path) +" HTTP/1.1\r\n"
 	                   "Connection: Upgrade\r\n"
 	                   "Upgrade: websocket\r\n"
 	                   "Host: " + String(host) + ":" + String(port) + "\r\n"
@@ -97,26 +97,32 @@ bool MQTTWSTraits::connect(WiFiClient* client, const char* host, int port)
 	                   "Origin: file://\r\n"
 	                   "Sec-WebSocket-Protocol: mqttv3.1\r\n"
 	                   "User-Agent: ESP8266MQTTClient\r\n"
+	                   "Sec-WebSocket-Extensions: permessage-deflate; client_max_window_bits\r\n"
 	                   "Sec-WebSocket-Key: " + _key + "\r\n\r\n";
-	if(!client->connect(host, port))
+	if(!client->connect(host, port)) {
+		LOG("ERROR: Can't connect \r\n");
 		return false;
+	}
 	client->write(handshake.c_str(), handshake.length());
 
 	while(client->connected() && !client->available()) {
 		delay(100);
-		if(timeout++ > 10)
+		if(timeout++ > 10) {
+			LOG("ERROR Read timeout\r\n");
 			return false;
+		}
 	}
 	while((bite = client->read()) != -1) {
 
 		temp += (char)bite;
 
 		if((char)bite == '\n') {
-			if(!foundupgrade && temp.startsWith("Upgrade: websocket")) {
+			if(!foundupgrade && (temp.startsWith("Upgrade: websocket") || temp.startsWith("upgrade: websocket"))) {
 				foundupgrade = true;
-			} else if(temp.startsWith("Sec-WebSocket-Accept: ")) {
+			} else if(temp.startsWith("Sec-WebSocket-Accept: ") || temp.startsWith("sec-websocket-accept: ")) {
 				serverKey = temp.substring(22, temp.length() - 2); // Don't save last CR+LF
 			}
+			LOG("Data=%s", temp.c_str());
 			temp = "";
 		}
 

@@ -187,8 +187,7 @@ bool MQTTClient::connect(void)
         return false;
     }
     _tcp->setNoDelay(true);
-    //if(!_tcp->connect(_host.c_str(), _port)) { //=>works
-    if(!_transportTraits->connect(_tcp.get(), _host.c_str(), _port)) { //=not works
+    if(!_transportTraits->connect(_tcp.get(), _host.c_str(), _port, _path.c_str())) { 
         LOG("[MQTT-Client] failed connect to %s:%u\n", _host.c_str(), _port);
         return false;
     }

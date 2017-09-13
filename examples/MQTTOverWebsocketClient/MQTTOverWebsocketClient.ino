@@ -28,7 +28,7 @@ void setup() {
     mqtt.subscribe("/qos2", 2);
   });
 
-  mqtt.begin("ws://test.mosquitto.org:8080");
+  mqtt.begin("ws://broker.mqttdashboard.com:8000/mqtt");
   //mqtt.begin("ws://test.mosquitto.org:8080", {.lwtTopic = "hello", .lwtMsg = "offline", .lwtQos = 0, .lwtRetain = 0});
   //mqtt.begin("ws://user:pass@mosquito.org:8080");
   //mqtt.begin("ws://user:pass@mosquito.org:8080#clientId");

@@ -20,7 +20,7 @@ public:
     MQTTTransportTraits();
     MQTTTransportTraits(bool secure);
     virtual std::unique_ptr<WiFiClient> create();
-    virtual bool connect(WiFiClient* client, const char* host, int port);
+    virtual bool connect(WiFiClient* client, const char* host, int port, const char *path);
     virtual int write(WiFiClient* client, unsigned char *data, int size);
     virtual int read(WiFiClient* client, unsigned char *data, int size);
 protected:
@@ -33,7 +33,7 @@ class MQTTWSTraits : public MQTTTransportTraits
 public:
     MQTTWSTraits();
     MQTTWSTraits(bool secure);
-    bool connect(WiFiClient* client, const char* host, int port) override;
+    bool connect(WiFiClient* client, const char* host, int port, const char *path) override;
     int write(WiFiClient* client, unsigned char *data, int size) override;
     int read(WiFiClient* client, unsigned char *data, int size) override;
 protected:
