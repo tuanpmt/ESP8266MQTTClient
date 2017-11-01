@@ -150,6 +150,7 @@ protected:
 	int _clean_session;
 	int _keepalive;
 	bool _initialized;
+	bool _disconnect_cb_called;
 
 	THandlerFunction _connected_cb;
 	THandlerFunction _disconnected_cb;
