@@ -261,6 +261,10 @@ void MQTTClient::onConnect(THandlerFunction fn)
 {
     _connected_cb = fn;
 }
+void MQTTClient::onDisconnect(THandlerFunction fn)
+{
+  _disconnected_cb = fn;
+}
 void MQTTClient::onSubscribe(THandlerFunction_PubSub fn)
 {
     _subscribe_cb = fn;
@@ -283,6 +287,11 @@ void MQTTClient::handle(void)
     if(!_initialized)
         return;
     if(!connected()) {
+        if (!_disconnect_cb_called) {
+            _disconnected_cb();
+            _disconnect_cb_called = true;
+        }
+
         if(_reconnect_tick != 0 && millis() - _reconnect_tick < MQTT_RECONNECT_TIMEOUT)
             return;
 
@@ -290,6 +299,7 @@ void MQTTClient::handle(void)
         if(connect()) {
             if(_connected_cb)
                 _connected_cb();
+                _disconnect_cb_called = false;
             _keepalive_tick = millis();
         } else {
             return;
