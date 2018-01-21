@@ -372,6 +372,8 @@ int MQTTClient::processRead()
     uint8_t msg_qos;
     uint16_t msg_id;
     mqtt_outbox *valid_msg;
+
+PROCESS_READ_AGAIN: // fix #6
     if(!connected())
         return 0;
     _tcp->setTimeout(DEFAULT_MQTT_READ_TIMEOUT);
@@ -379,7 +381,11 @@ int MQTTClient::processRead()
     if(read_len <= 0)
         return 0;
     _state.message_length_read = read_len;
-PROCESS_READ_AGAIN:
+
+// Issue #6: place this retry label here may lead to non-stop retry loop and cause wdt reset
+// if current msg_type != MQTT_MSG_TYPE_SUBACK (i.e. MQTT_MSG_TYPE_PINGRESP)
+// PROCESS_READ_AGAIN:
+    
     msg_type = mqtt_get_type(_state.in_buffer);
     msg_qos = mqtt_get_qos(_state.in_buffer);
     msg_id = mqtt_get_id(_state.in_buffer, _state.in_buffer_length);
