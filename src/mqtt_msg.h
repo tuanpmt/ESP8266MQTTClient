@@ -37,7 +37,7 @@ extern "C" {
 */
 /* 7      6     5     4     3     2     1     0*/
 /*|      --- Message Type----     |  DUP Flag |    QoS Level    | Retain  |
-/*                    Remaining Length                 */
+ *                    Remaining Length                 */
 
 
 enum mqtt_message_type
