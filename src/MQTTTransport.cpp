@@ -143,8 +143,8 @@ bool MQTTWSTraits::connect(WiFiClient* client, const char* host, int port, const
 
 int MQTTWSTraits::write(WiFiClient* client, unsigned char *data, int size)
 {
-	char header_len = 0, *mask, *data_buffer;
-	int written = 0;
+	char *mask, *data_buffer;
+	int header_len = 0;
 	data_buffer = (char *) malloc(MAX_WEBSOCKET_HEADER_SIZE + size);
 	if(data_buffer == NULL)
 		return -1;
@@ -176,7 +176,8 @@ int MQTTWSTraits::write(WiFiClient* client, unsigned char *data, int size)
 int MQTTWSTraits::read(WiFiClient* client, unsigned char *data, int size)
 {
 	unsigned char *data_buffer = (unsigned char*) malloc(size + MAX_WEBSOCKET_HEADER_SIZE), *data_ptr, opcode, mask, *maskKey = NULL;
-	int tcp_read_size, payloadLen;
+	int tcp_read_size;
+  size_t payloadLen;
 	data_ptr = data_buffer;
 	if(data_buffer == NULL)
 		return -1;
@@ -219,5 +220,6 @@ int MQTTWSTraits::read(WiFiClient* client, unsigned char *data, int size)
 	} else {
 		memcpy(data, data_ptr, payloadLen);
 	}
+  free(data_buffer);
 	return payloadLen;
 }

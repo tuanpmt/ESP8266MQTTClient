@@ -32,14 +32,14 @@ License (MIT license):
  * constructor
  */
 MQTTClient::MQTTClient():
+  _reconnect_tick(0),
+  _initialized(false),
     _connected_cb(NULL),
     _disconnected_cb(NULL),
     _subscribe_cb(NULL),
     _publish_cb(NULL),
     _data_cb(NULL),
-    _secure_cb(NULL),
-    _initialized(false),
-    _reconnect_tick(0)
+  _secure_cb(NULL)
 {
     _outbox = ob_create();
 
@@ -54,6 +54,12 @@ MQTTClient::~MQTTClient()
         _tcp->stop();
     }
     ob_destroy(_outbox);
+    if(_state.in_buffer != NULL){
+      free(_state.in_buffer);
+    }
+    if(_state.out_buffer != NULL){
+      free(_state.out_buffer);
+    }
 }
 
 
@@ -127,7 +133,8 @@ bool MQTTClient::begin(String uri, LwtOptions lwt, int keepalive, bool clean_ses
     }
     _state.in_buffer_length = DEFAULT_MQTT_BUFFER_SIZE_BYTES;
     _state.out_buffer = (uint8_t *)malloc(DEFAULT_MQTT_BUFFER_SIZE_BYTES);
-    if(_state.in_buffer == NULL) {
+    if(_state.out_buffer == NULL) {
+        free(_state.out_buffer);
         free(_state.in_buffer);
         LOG("Not enought memory\r\n");
         return false;
@@ -308,7 +315,7 @@ void MQTTClient::handle(void)
 
     processRead();
 
-    if(millis() - _keepalive_tick > _keepalive / 2) {
+    if(millis() - _keepalive_tick > (uint32_t)_keepalive / 2) {
         _keepalive_tick = millis();
         sendPing();
     }
@@ -331,7 +338,7 @@ void MQTTClient::handle(void)
 bool MQTTClient::deliverPublish(uint8_t *message)
 {
     mqtt_event_data_t event_data;
-    int more_data = 0, len_read_more = 0;
+    int len_read_more = 0;
     String topic, data;
     char temp;
     _state.message_length = mqtt_get_total_length(_state.in_buffer, _state.message_length_read);
@@ -551,3 +558,4 @@ int MQTTClient::publish(String topic, String data, int qos, int retain)
     queue(remove_on_sent);
     return _state.pending_msg_id;
 }
+

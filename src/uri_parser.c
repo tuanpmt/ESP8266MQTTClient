@@ -47,10 +47,11 @@ parsed_uri_t *parse_uri(const char *url)
         PARSE_FRAGMENT
     } parse_state = 0;
     puri = (parsed_uri_t *)malloc(sizeof(parsed_uri_t));
-    memset(puri, 0, sizeof(parsed_uri_t));
     if(NULL == puri) {
+      //malloc failed, don't try to memset it
         return NULL;
     }
+    memset(puri, 0, sizeof(parsed_uri_t));
     puri->_uri_len = strlen(url);
     puri->_uri = (char*) malloc(puri->_uri_len + 1);
     memset(puri->_uri, 0, puri->_uri_len + 1);
@@ -178,7 +179,7 @@ parsed_uri_t *parse_uri(const char *url)
         puri->password = NULL;
     }
     if (puri->path && puri->path[0]!= 0){
-        char *temp = malloc(strlen(puri->path) + 2);
+      char *temp = (char*)malloc(strlen(puri->path) + 2);
         sprintf(temp, "/%s", puri->path);
         puri->path = temp;
     } else {

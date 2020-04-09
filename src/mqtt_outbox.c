@@ -59,7 +59,7 @@ mqtt_outbox *ob_put(mqtt_outbox *ob, uint8_t *data, int len, int msg_id, int msg
     mqtt_outbox *top = ob_get_top(ob);
     top->next = ob_create();
     if(top->next) {
-        ob_set_data(top->next, data, len, msg_id, msg_type, tick, remove_on_sent);
+      ob_set_data(top->next, (char*)data, len, msg_id, msg_type, tick, remove_on_sent);
         top->next->prev = top;
     }
     return top->next;
