@@ -82,7 +82,7 @@ bool MQTTWSTraits::connect(WiFiClient* client, const char* host, int port, const
 	uint8_t randomKey[16] = { 0 }, timeout = 0;
 	int bite;
 	bool foundupgrade = false;
-	String serverKey, temp, acceptKey;
+	String serverKey, temp, acceptKey, tempLowercase;
 
 	for(uint8_t i = 0; i < sizeof(randomKey); i++) {
 		randomKey[i] = random(0xFF);
@@ -115,15 +115,17 @@ bool MQTTWSTraits::connect(WiFiClient* client, const char* host, int port, const
 	while((bite = client->read()) != -1) {
 
 		temp += (char)bite;
+		tempLowercase += (char)::tolower((char)bite);
 
 		if((char)bite == '\n') {
-			if(!foundupgrade && (temp.startsWith("Upgrade: websocket") || temp.startsWith("upgrade: websocket"))) {
+			if(!foundupgrade && (tempLowercase.startsWith("upgrade: websocket"))) {
 				foundupgrade = true;
-			} else if(temp.startsWith("Sec-WebSocket-Accept: ") || temp.startsWith("sec-websocket-accept: ")) {
+			} else if(tempLowercase.startsWith("sec-websocket-accept: ")) {
 				serverKey = temp.substring(22, temp.length() - 2); // Don't save last CR+LF
 			}
 			LOG("Data=%s", temp.c_str());
 			temp = "";
+                        tempLowercase = "";
 		}
 
 		if(!client->available()) {
