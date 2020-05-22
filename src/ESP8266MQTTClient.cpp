@@ -97,7 +97,7 @@ bool MQTTClient::begin(String uri, LwtOptions lwt, int keepalive, bool clean_ses
     }
 
     if(puri->path) {
-        _path += String(puri->path);
+        _path = String(puri->path);
     }
     if(puri->username)
         _username = String(puri->username);
