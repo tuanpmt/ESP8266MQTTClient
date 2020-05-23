@@ -67,11 +67,11 @@ int MQTTTransportTraits::read(WiFiClient* client, unsigned char *data, int size)
  * MQTT Over WS
  */
 
-MQTTWSTraits::MQTTWSTraits(): _isSecure(false)
+MQTTWSTraits::MQTTWSTraits(): MQTTTransportTraits(false)
 {
 	randomSeed(RANDOM_REG32);
 }
-MQTTWSTraits::MQTTWSTraits(bool secure): _isSecure(secure)
+MQTTWSTraits::MQTTWSTraits(bool secure): MQTTTransportTraits(secure)
 {
 	randomSeed(RANDOM_REG32);
 }
