@@ -38,6 +38,5 @@ public:
     int read(WiFiClient* client, unsigned char *data, int size) override;
 protected:
     String _key;
-    bool _isSecure;
 };
 #endif
