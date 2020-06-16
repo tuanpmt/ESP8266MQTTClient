@@ -173,53 +173,96 @@ int MQTTWSTraits::write(WiFiClient* client, unsigned char *data, int size)
 	free(data_buffer);
 	return size;
 }
-int MQTTWSTraits::read(WiFiClient* client, unsigned char *data, int size)
-{
-	unsigned char *data_buffer = (unsigned char*) malloc(size + MAX_WEBSOCKET_HEADER_SIZE), *data_ptr, opcode, mask, *maskKey = NULL;
-	int tcp_read_size;
-  size_t payloadLen;
-	data_ptr = data_buffer;
-	if(data_buffer == NULL)
-		return -1;
 
-	tcp_read_size = client->read(data_buffer, size + MAX_WEBSOCKET_HEADER_SIZE);
+// https://tools.ietf.org/html/rfc6455#section-5.2
+int MQTTWSTraits::read(WiFiClient *client, unsigned char *data, int size) {
+    if (size < 0) {
+        return -1;
+    } else if (size == 0) {
+        return 0;
+    }
+    uint32_t max_buffer_length = size;
 
-	if(tcp_read_size <= 0)
-	{
-		free(data_buffer);
-		return -1;
-	}
-	opcode = (*data_ptr & 0x0F);
-	data_ptr ++;
-	mask = ((*data_ptr >> 7) & 0x01);
-	payloadLen = (*data_ptr & 0x7F);
-	data_ptr++;
-	LOG("Opcode: %d, mask: %d, len: %d\r\n", opcode, mask, payloadLen);
-	if(payloadLen == 126) {
-		// headerLen += 2;
-		payloadLen = data_ptr[0] << 8 | data_ptr[1];
-		data_ptr += 2;
-	} else if(payloadLen == 127) {
-		// headerLen += 8;
+    if (client->available() < 2) {
+        return 0;
+    }
+    uint8_t fixed_size_header[2];
+    client->peekBytes(fixed_size_header, 2);
+    uint8_t opcode = fixed_size_header[0] & 0x0F;
+    bool mask = (fixed_size_header[1] >> 7) & 0x01;
+    uint32_t payload_length = fixed_size_header[1] & 0x7F;
 
-		if(data_ptr[0] != 0 || data_ptr[1] != 0 || data_ptr[2] != 0 || data_ptr[3] != 0) {
-			// really too big!
-			payloadLen = 0xFFFFFFFF;
-		} else {
-			payloadLen = data_ptr[4] << 24 | data_ptr[5] << 16 | data_ptr[6] << 8 | data_ptr[7];
-		}
-		data_ptr += 8;
-	}
+    uint8_t header_length = 2;
+    if (payload_length == 126) {
+        header_length += 2;
+    } else if (payload_length == 127) {
+        header_length += 8;
+    }
+    if (mask) {
+        header_length += 4;
+    }
 
-	if(mask) {
-		maskKey = data_ptr;
-		data_ptr += 4;
-		for(size_t i = 0; i < payloadLen; i++) {
-			data[i] = (data_ptr[i] ^ maskKey[i % 4]);
-		}
-	} else {
-		memcpy(data, data_ptr, payloadLen);
-	}
-  free(data_buffer);
-	return payloadLen;
+    if (client->available() < header_length) {
+        return 0;
+    }
+
+    uint8_t header[header_length];
+    client->read(header, header_length);
+    uint8_t index = 2;
+
+    if (payload_length == 126) {
+        payload_length = header[index] << 8 | header[index + 1];
+        index += 2;
+    } else if (payload_length == 127) {
+        if (header[index] != 0 || header[index + 1] != 0 || header[index + 2] != 0 || header[index + 3] != 0) {
+            // really too big!
+            payload_length = 0xFFFFFFFF;
+        } else {
+            payload_length =
+                    header[index + 4] << 24 | header[index + 5] << 16 | header[index + 6] << 8 | header[index + 7];
+        }
+        index += 8;
+    }
+
+    uint8_t *mask_key_ptr = NULL;
+    if (mask) {
+        mask_key_ptr = &header[index];
+        index += 4;
+    }
+
+    // read payload but only so much that it fits into the buffer size except when more is already available
+    uint32_t buffer_length;
+    if (max_buffer_length < payload_length) {
+        uint32_t payload_avail = client->available();
+        if (payload_avail > max_buffer_length && payload_avail < payload_length) {
+            buffer_length = payload_avail;
+        } else {
+            buffer_length = size;
+        }
+    } else {
+        buffer_length = payload_length;
+    }
+
+    uint8_t buffer[buffer_length];
+    uint32_t read_length = client->read(buffer, buffer_length);
+    uint32_t copy_length = read_length;
+    if (max_buffer_length < copy_length) {
+        copy_length = max_buffer_length;
+    }
+
+    uint8_t *data_ptr = buffer;
+
+    if (opcode == 0x00 || opcode == 0x01 || opcode == 0x02) {
+        if (mask) {
+            for (size_t i = 0; i < copy_length; i++) {
+                data[i] = (data_ptr[i] ^ mask_key_ptr[i % 4]);
+            }
+        } else {
+            memcpy(data, data_ptr, copy_length);
+        }
+
+        return copy_length;
+    } else {
+        return 0;
+    }
 }
