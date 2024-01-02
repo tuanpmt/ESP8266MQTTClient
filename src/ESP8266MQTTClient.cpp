@@ -294,7 +294,7 @@ void MQTTClient::handle(void)
     if(!_initialized)
         return;
     if(!connected()) {
-        if (!_disconnect_cb_called) {
+        if (_disconnected_cb && !_disconnect_cb_called) {
             _disconnected_cb();
             _disconnect_cb_called = true;
         }
@@ -304,9 +304,10 @@ void MQTTClient::handle(void)
 
         _reconnect_tick = millis();
         if(connect()) {
-            if(_connected_cb)
+            if(_connected_cb) {
                 _connected_cb();
                 _disconnect_cb_called = false;
+            }
             _keepalive_tick = millis();
         } else {
             return;
